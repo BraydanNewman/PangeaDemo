@@ -4,7 +4,8 @@ let viewFocalLength = 50.0;
 let pointData;
 
 
-// TODO: Bind arrow keys to rotate left and right and up down to change camera distance, maybe +/- for focal length
+// TODO: Bind +/- for focal length
+// TODO: Implement key binds more efficiently and combined it with leftTurn and rightTurn
 let leftTurn = document.getElementById("left-turn");
 leftTurn.onclick = (event) => {
     viewRotation-=0.1;
@@ -91,6 +92,7 @@ async function renderImage() {
         body: JSON.stringify(data)
     }
 
+    // TODO: add .catch for errors
     fetch(url, options)
         .then((response) => response.blob())
         .then(imageBlob => {
