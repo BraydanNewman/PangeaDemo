@@ -3,6 +3,7 @@ let viewDistance = 2.0;
 let viewFocalLength = 50.0;
 let pointData;
 
+
 // TODO: Bind arrow keys to rotate left and right and up down to change camera distance, maybe +/- for focal length
 let leftTurn = document.getElementById("left-turn");
 leftTurn.onclick = (event) => {
@@ -20,6 +21,48 @@ rightTurn.onclick = (event) => {
     event.preventDefault();
 };
 
+window.addEventListener("keydown", function (event) {
+    if (event.defaultPrevented) {
+        return;
+    }
+
+    switch (event.key) {
+        case "Left":
+        case "ArrowLeft":
+            viewRotation-=0.1;
+            setText('rotation', viewRotation);
+            renderImage().then();
+            break;
+        case "Right":
+        case "ArrowRight":
+            viewRotation+=0.1;
+            setText('rotation', viewRotation);
+            renderImage().then();
+            break;
+        case "Up":
+        case "ArrowUp":
+            viewDistance+=0.1;
+            setText('distance', viewDistance);
+            renderImage().then();
+            break;
+        case "Down":
+        case "ArrowDown":
+            viewDistance-=0.1;
+            setText('distance', viewDistance)
+            renderImage().then();
+            break;
+        case "Minus":
+        case "Dash":
+            viewFocalLength-=0.1;
+            setText('focal_length', viewFocalLength);
+            renderImage().then();
+            break;
+    }
+
+  event.preventDefault();
+}, true);
+
+
 let viewParams = document.querySelectorAll('.view');
 viewParams.forEach(el => {
     el.onchange = () => renderImage();
@@ -29,8 +72,6 @@ async function renderImage() {
     viewRotation = Number(document.getElementById('rotation').value);
     viewDistance = Number(document.getElementById('distance').value);
     viewFocalLength = Number(document.getElementById('focal_length').value);
-
-    // TODO: update render-image using the image from /render/ route
 
     const url = getUrl("/api/render")
     const data = {
