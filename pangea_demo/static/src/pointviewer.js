@@ -31,6 +31,31 @@ async function renderImage() {
     viewFocalLength = Number(document.getElementById('focal_length').value);
 
     // TODO: update render-image using the image from /render/ route
+
+    const url = getUrl("/api/render")
+    const data = {
+        'points': pointData,
+        'params': {
+                "rotation": viewRotation,
+                "distance": viewDistance,
+                "focal_length": viewFocalLength
+            }
+        }
+
+    const options = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    }
+
+    fetch(url, options)
+        .then((response) => response.blob())
+        .then(imageBlob => {
+            document.getElementById("render-image").src = URL.createObjectURL(imageBlob);
+  })
+
 }
 
 function getUrl(path) {

@@ -26,7 +26,7 @@ def render_data():
         points = [Point(*p) for p in points]
         fit_params = req_data.get("params", {})
         img = render_points(points, fit_params, dims=dims)
-        data = io.StringIO()
+        data = io.BytesIO()
         img.save(data, "PNG")
         data.seek(0)
     except Exception as e:
