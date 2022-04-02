@@ -3,8 +3,11 @@ let viewDistance = 2.0;
 let viewFocalLength = 50.0;
 let pointData = {};
 
-// TODO: Bind +/- for focal length
-// TODO: Implement key binds more efficiently and combined it with leftTurn and rightTurn
+const radioButtons = document.querySelectorAll('input[name="point-data"]');
+        for(const radioButton of radioButtons){
+            radioButton.addEventListener('change', () => renderImage().then());
+        }
+
 let leftTurn = document.getElementById("left-turn");
 leftTurn.onclick = (event) => {
     viewRotation -= 0.1;
@@ -51,11 +54,15 @@ window.addEventListener("keydown", function (event) {
             setText('distance', viewDistance)
             renderImage().then();
             break;
-        case "Minus":
-        case "Dash":
-            viewFocalLength -= 0.1;
-            setText('focal_length', viewFocalLength);
-            renderImage().then();
+        case "+":
+            viewFocalLength+=0.1;
+            setText('focal_length', viewFocalLength)
+            renderImage().then()
+            break;
+        case "-":
+            viewFocalLength-=0.1;
+            setText('focal_length', viewFocalLength)
+            renderImage().then()
             break;
     }
 
@@ -69,12 +76,11 @@ viewParams.forEach(el => {
 });
 
 async function renderImage() {
+    await loadData()
+
     viewRotation = Number(document.getElementById('rotation').value);
     viewDistance = Number(document.getElementById('distance').value);
     viewFocalLength = Number(document.getElementById('focal_length').value);
-
-    // TODO: stop requesting the same data everytime in its not needed
-    await loadData()
 
     const options = {
         method: 'POST',
@@ -82,7 +88,7 @@ async function renderImage() {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            points: pointData['points'],
+            points: pointData,
             'params': {
                 "rotation": viewRotation,
                 "distance": viewDistance,
@@ -91,11 +97,14 @@ async function renderImage() {
         })
     }
 
-    // TODO: add .catch for errors
     fetch(getUrl("/api/render"), options)
         .then((response) => response.blob())
         .then(imageBlob => {
             document.getElementById("render-image").src = URL.createObjectURL(imageBlob);
+        })
+        .catch(error => {
+            console.log(error);
+            document.getElementById("render-image").src = '/img/black.png';
         })
 }
 
@@ -119,10 +128,22 @@ async function loadData() {
         .then(response =>
             response.json()
         )
-        .then(data => pointData = data)
-    
-    // TODO: connect dataSelect to different point datasets. Either add data to points.json or load multiple points
-    //  files
+        .then(data => {
+            const dataSelectors = document.querySelectorAll('input[name="point-data"]');
+            let selectedData;
+            for (const dataSelector of dataSelectors) {
+                if (dataSelector.checked) {
+                    selectedData = dataSelector.value;
+                    break;
+                }
+            }
+            const dataSets = []
+            for (let set in data) {
+                dataSets.push(data[set])
+            }
+            console.log(dataSets[selectedData-1])
+            return pointData = dataSets[selectedData-1]
+        })
 }
 
 
