@@ -1,14 +1,13 @@
 let viewRotation = 0.0;
 let viewDistance = 2.0;
 let viewFocalLength = 50.0;
-let pointData;
-
+let pointData = {};
 
 // TODO: Bind +/- for focal length
 // TODO: Implement key binds more efficiently and combined it with leftTurn and rightTurn
 let leftTurn = document.getElementById("left-turn");
 leftTurn.onclick = (event) => {
-    viewRotation-=0.1;
+    viewRotation -= 0.1;
     setText('rotation', viewRotation);
     renderImage().then();
     event.preventDefault();
@@ -16,7 +15,7 @@ leftTurn.onclick = (event) => {
 
 let rightTurn = document.getElementById("right-turn");
 rightTurn.onclick = (event) => {
-    viewRotation+=0.1;
+    viewRotation += 0.1;
     setText('rotation', viewRotation);
     renderImage().then();
     event.preventDefault();
@@ -30,37 +29,37 @@ window.addEventListener("keydown", function (event) {
     switch (event.key) {
         case "Left":
         case "ArrowLeft":
-            viewRotation-=0.1;
+            viewRotation -= 0.1;
             setText('rotation', viewRotation);
             renderImage().then();
             break;
         case "Right":
         case "ArrowRight":
-            viewRotation+=0.1;
+            viewRotation += 0.1;
             setText('rotation', viewRotation);
             renderImage().then();
             break;
         case "Up":
         case "ArrowUp":
-            viewDistance+=0.1;
+            viewDistance += 0.1;
             setText('distance', viewDistance);
             renderImage().then();
             break;
         case "Down":
         case "ArrowDown":
-            viewDistance-=0.1;
+            viewDistance -= 0.1;
             setText('distance', viewDistance)
             renderImage().then();
             break;
         case "Minus":
         case "Dash":
-            viewFocalLength-=0.1;
+            viewFocalLength -= 0.1;
             setText('focal_length', viewFocalLength);
             renderImage().then();
             break;
     }
 
-  event.preventDefault();
+    event.preventDefault();
 }, true);
 
 
@@ -74,31 +73,30 @@ async function renderImage() {
     viewDistance = Number(document.getElementById('distance').value);
     viewFocalLength = Number(document.getElementById('focal_length').value);
 
-    const url = getUrl("/api/render")
-    const data = {
-        'points': pointData,
-        'params': {
-                "rotation": viewRotation,
-                "distance": viewDistance,
-                "focal_length": viewFocalLength
-            }
-        }
+    // TODO: stop requesting the same data everytime in its not needed
+    await loadData()
 
     const options = {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+            points: pointData['points'],
+            'params': {
+                "rotation": viewRotation,
+                "distance": viewDistance,
+                "focal_length": viewFocalLength
+            }
+        })
     }
 
     // TODO: add .catch for errors
-    fetch(url, options)
+    fetch(getUrl("/api/render"), options)
         .then((response) => response.blob())
         .then(imageBlob => {
             document.getElementById("render-image").src = URL.createObjectURL(imageBlob);
-  })
-
+        })
 }
 
 function getUrl(path) {
@@ -117,7 +115,12 @@ async function loadData() {
     setText('distance', viewDistance);
     setText('focal_length', viewFocalLength);
 
-    // TODO: load /data/points.json into pointData
+    await fetch(getUrl('/data/points.json'))
+        .then(response =>
+            response.json()
+        )
+        .then(data => pointData = data)
+    
     // TODO: connect dataSelect to different point datasets. Either add data to points.json or load multiple points
     //  files
 }
