@@ -135,8 +135,11 @@ async function loadData() {
             for (let set in data) {
                 dataSets.push(data[set])
             }
-            console.log(dataSets[selectedData-1])
-            return pointData = dataSets[selectedData-1]
+            if (selectedData-1 >= 0 || selectedData <= dataSets.length) {
+                return pointData = dataSets[selectedData-1]
+            } else {
+                return pointData = {}
+            }
         })
 }
 
