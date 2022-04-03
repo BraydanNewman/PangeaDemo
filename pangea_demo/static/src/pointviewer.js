@@ -34,37 +34,31 @@ window.addEventListener("keydown", function (event) {
         case "ArrowLeft":
             viewRotation -= 0.1;
             setText('rotation', viewRotation);
-            renderImage().then();
             break;
         case "Right":
         case "ArrowRight":
             viewRotation += 0.1;
             setText('rotation', viewRotation);
-            renderImage().then();
             break;
         case "Up":
         case "ArrowUp":
             viewDistance += 0.1;
             setText('distance', viewDistance);
-            renderImage().then();
             break;
         case "Down":
         case "ArrowDown":
             viewDistance -= 0.1;
             setText('distance', viewDistance)
-            renderImage().then();
             break;
         case "+":
             viewFocalLength+=0.1;
             setText('focal_length', viewFocalLength)
-            renderImage().then()
             break;
         case "-":
             viewFocalLength-=0.1;
             setText('focal_length', viewFocalLength)
-            renderImage().then()
-            break;
     }
+    renderImage().then();
 
     event.preventDefault();
 }, true);
