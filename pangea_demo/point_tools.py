@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import List, Tuple, Dict, Any, Union
 from PIL import Image, ImageDraw
 import logging
+import numpy as np
 
 logger = logging.getLogger()
 
@@ -71,10 +72,10 @@ def world_to_camera(point: "Point", camera: Dict[str, Any]) -> "Point":
 
 
 def render_points(
-    points: List["Point"],
-    view: Dict[str, float],
-    fit_params: Dict[str, "Point"] = None,
-    dims: Tuple[int, int] = (320, 320),
+        points: List["Point"],
+        view: Dict[str, float],
+        fit_params: Dict[str, "Point"] = None,
+        dims: Tuple[int, int] = (320, 320),
 ) -> Image.Image:
     """Creates an image of the points and the fitted plane from the view of the camera at a position given in view.
     The view dictionary defines the position of the camera in the x,y plane by an angle in radians and a distance
@@ -104,10 +105,95 @@ def render_points(
 def fit_points(points: List[Tuple[float, float, float]]) -> Dict[str, "Point"]:
     """Takes a  list of input points and calculates the plane of best fit."""
     # TODO: implementation to return plane defined by point and normal
-    point = Point(0, 0, 0)
-    normal = Point(1, 0, 0)
+    plane_coefficients = get_plane_coefficients(points)
+    point_z = (-plane_coefficients[3]/-plane_coefficients[2])
+    point = Point(0, 0, point_z)
+    normal = Point(plane_coefficients[0], plane_coefficients[1], plane_coefficients[2])
     normal = normal * (1 / normal.norm())
     return {"point": point, "normal": normal}
+
+
+def get_plane_coefficients(points: List[Tuple[float, float, float]]) -> Tuple[float, float, float, float]:
+    points_np = np.array(points)
+    val_type = np.float64
+
+    n = points_np.shape[0]
+    if n < 3:
+        return 0, 0, 0, 0
+
+    total = np.zeros(3, dtype=val_type)
+    for p in points_np:
+        total += p
+    centroid = total * (1.0 / val_type(n))
+
+    xx = 0.0
+    xy = 0.0
+    xz = 0.0
+    yy = 0.0
+    yz = 0.0
+    zz = 0.0
+    for p in points_np:
+        r = p - centroid
+        xx += r[0] * r[0]
+        xy += r[0] * r[1]
+        xz += r[0] * r[2]
+        yy += r[1] * r[1]
+        yz += r[1] * r[2]
+        zz += r[2] * r[2]
+    xx /= val_type(n)
+    xy /= val_type(n)
+    xz /= val_type(n)
+    yy /= val_type(n)
+    yz /= val_type(n)
+    zz /= val_type(n)
+
+    weighted_dir = np.zeros(3, dtype=val_type)
+    axis_dir = np.zeros(3, dtype=val_type)
+
+    # X COMPONENT
+    det_x = (yy * zz) - (yz * yz)
+    axis_dir[0] = det_x
+    axis_dir[1] = (xz * yz) - (xy * zz)
+    axis_dir[2] = (xy * yz) - (xz * yy)
+    weight = det_x * det_x
+    if np.dot(weighted_dir, axis_dir) < 0.0:
+        weight *= -1.0
+    weighted_dir += axis_dir * weight
+
+    # Y COMPONENT
+    det_y = (xx * zz) - (xz * xz)
+    axis_dir[0] = (xz * yz) - (xy * zz)
+    axis_dir[1] = det_y
+    axis_dir[2] = (xy * xz) - (yz * xx)
+    weight = det_y * det_y
+    if np.dot(weighted_dir, axis_dir) < 0.0:
+        weight *= -1.0
+    weighted_dir += axis_dir * weight
+
+    # Z COMPONENT
+    det_z = (xx * yy) - (xy * xy)
+    axis_dir[0] = (xy * yz) - (xz * yy)
+    axis_dir[1] = (xy * xz) - (yz * xx)
+    axis_dir[2] = det_z
+    weight = det_z * det_z
+    if np.dot(weighted_dir, axis_dir) < 0.0:
+        weight *= -1.0
+    weighted_dir += axis_dir * weight
+
+    a = weighted_dir[0]
+    b = weighted_dir[1]
+    c = weighted_dir[2]
+    d = np.dot(weighted_dir, centroid) * -1.0  # Multiplication by -1 preserves the sign (+) of D on the LHS
+    normalization_factor = math.sqrt((a * a) + (b * b) + (c * c))
+    if normalization_factor == 0:
+        return 0, 0, 0, 0
+    elif normalization_factor != 1.0:  # Skips normalization if already normalized
+        a /= normalization_factor
+        b /= normalization_factor
+        c /= normalization_factor
+        d /= normalization_factor
+    # Returns a float 4-tuple of the A/B/C/D coefficients such that (Ax + By + Cz + D == 0)
+    return a, b, c, d
 
 
 if __name__ == "__main__":
@@ -125,6 +211,11 @@ if __name__ == "__main__":
         ],
         "params": {"rotation": 0, "distance": 2.0, "focal_length": 50.0},
     }
+
+    # Test fit_points() function
+    point_normal = fit_points(req_data["points"])
+    print(f"Point: {point_normal['point']}, Normal: {point_normal['normal']}")
+
     points_in = [Point(*p) for p in req_data["points"]]
     img_out = render_points(points_in, req_data["params"])
     # TODO: should show up as:
