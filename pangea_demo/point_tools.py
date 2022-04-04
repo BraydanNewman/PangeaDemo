@@ -104,12 +104,10 @@ def render_points(
 
 def fit_points(points: List[Tuple[float, float, float]]) -> Dict[str, "Point"]:
     """Takes a  list of input points and calculates the plane of best fit."""
-    # TODO: implementation to return plane defined by point and normal
     plane_coefficients = get_plane_coefficients(points)
     point_z = (-plane_coefficients[3]/-plane_coefficients[2])
     point = Point(0, 0, point_z)
     normal = Point(plane_coefficients[0], plane_coefficients[1], plane_coefficients[2])
-    normal = normal * (1 / normal.norm())
     return {"point": point, "normal": normal}
 
 
